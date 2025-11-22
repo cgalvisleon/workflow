@@ -8,6 +8,7 @@ import (
 	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/request"
+	"github.com/cgalvisleon/jdb/jdb"
 	"github.com/dop251/goja"
 )
 
@@ -88,6 +89,15 @@ func Event(vm *Vm) {
 			data := args[1].Export().(map[string]interface{})
 			event.Work(channel, data)
 		},
+		"source": func(call goja.FunctionCall) {
+			args := call.Arguments
+			if len(args) != 2 {
+				panic(vm.NewGoError(fmt.Errorf(MSG_ARG_REQUIRED, "channel, data")))
+			}
+			channel := args[0].String()
+			data := args[1].Export().(map[string]interface{})
+			event.Publish(channel, data)
+		},
 	})
 }
 
@@ -158,5 +168,76 @@ func Cache(vm *Vm) {
 			result := cache.Decr(key)
 			return vm.ToValue(result)
 		},
+	})
+}
+
+/**
+* Model
+* @param vm *Vm
+**/
+func Model(vm *Vm) {
+	vm.Set("model", func(call goja.FunctionCall) goja.Value {
+		args := call.Arguments
+		if len(args) != 2 {
+			panic(vm.NewGoError(fmt.Errorf(MSG_ARG_REQUIRED, "database, model")))
+		}
+		database := args[0].String()
+		model := args[1].String()
+		result, err := jdb.GetModel(database, model)
+		if err != nil {
+			panic(vm.NewGoError(err))
+		}
+
+		return vm.ToValue(result)
+	})
+}
+
+/**
+* Select
+* @param vm *Vm
+**/
+func Select(vm *Vm) {
+	vm.Set("select", func(call goja.FunctionCall) goja.Value {
+		args := call.Arguments
+		if len(args) != 1 {
+			panic(vm.NewGoError(fmt.Errorf(MSG_ARG_REQUIRED, "query")))
+		}
+		query := args[0].Export().(map[string]interface{})
+		ql, err := jdb.Select(query)
+		if err != nil {
+			panic(vm.NewGoError(err))
+		}
+
+		result, err := ql.Result()
+		if err != nil {
+			panic(vm.NewGoError(err))
+		}
+
+		return vm.ToValue(result)
+	})
+}
+
+/**
+* Query
+* @param vm *Vm
+**/
+func Query(vm *Vm) {
+	vm.Set("query", func(call goja.FunctionCall) goja.Value {
+		args := call.Arguments
+		if len(args) != 1 {
+			panic(vm.NewGoError(fmt.Errorf(MSG_ARG_REQUIRED, "query")))
+		}
+		database := args[0].String()
+		sql := args[1].String()
+		arg := []interface{}{}
+		for i := 2; i < len(args); i++ {
+			arg = append(arg, args[i].Export())
+		}
+		result, err := jdb.Query(database, sql, arg...)
+		if err != nil {
+			panic(vm.NewGoError(err))
+		}
+
+		return vm.ToValue(result)
 	})
 }

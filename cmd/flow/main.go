@@ -30,7 +30,7 @@ func flowDefinition() {
 	if err != nil {
 		logs.Error(err)
 	} else {
-		logs.Logf("Result:", result.ToString())
+		logs.Logf("Result", result.ToString())
 	}
 }
 

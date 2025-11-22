@@ -3,8 +3,18 @@ console.log("Hello World");
 console.debug("Hello World");
 console.info("Hello World");
 console.error("Hello World");
+console.log({
+  ctx: ctx,
+  ctxs: ctxs,
+  pinnedData: pinnedData,
+});
 
-result = ctx;
+let i = cache.incr("test", 10);
+i = cache.incr("test", 10);
+console.log(i);
 instance.SetPinnedData("test", "test2");
 
-result = pinnedData;
+result = {
+  test: "test",
+  test2: "test2",
+};

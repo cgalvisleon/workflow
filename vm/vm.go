@@ -24,6 +24,9 @@ func New() *Vm {
 	Fetch(result)
 	Event(result)
 	Cache(result)
+	Model(result)
+	Select(result)
+	Query(result)
 	return result
 }
 
