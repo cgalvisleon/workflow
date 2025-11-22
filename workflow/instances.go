@@ -10,7 +10,7 @@ import (
 	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/resilience"
 	"github.com/cgalvisleon/et/utility"
-	"github.com/cgalvisleon/et/vm"
+	"github.com/cgalvisleon/workflow/vm"
 )
 
 type FlowStatus string

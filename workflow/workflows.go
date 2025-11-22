@@ -10,7 +10,7 @@ import (
 	"github.com/cgalvisleon/et/reg"
 	"github.com/cgalvisleon/et/resilience"
 	"github.com/cgalvisleon/et/timezone"
-	"github.com/cgalvisleon/et/vm"
+	"github.com/cgalvisleon/workflow/vm"
 )
 
 var (

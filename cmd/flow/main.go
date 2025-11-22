@@ -9,7 +9,7 @@ import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/response"
-	"github.com/cgalvisleon/et/workflow"
+	"github.com/cgalvisleon/workflow/workflow"
 )
 
 func main() {
