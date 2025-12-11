@@ -1,6 +1,7 @@
 package workflow
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/cgalvisleon/et/cache"
@@ -127,9 +128,9 @@ func Continue(instanceId string, tags et.Json, ctx et.Json, createdBy string) (e
 		return et.Json{}, err
 	}
 
-	instance, err := workFlows.loadInstance(instanceId)
-	if err != nil {
-		return et.Json{}, err
+	instance, exists := workFlows.loadInstance(instanceId)
+	if !exists {
+		return et.Json{}, fmt.Errorf(MSG_INSTANCE_NOT_FOUND)
 	}
 
 	return workFlows.run(instanceId, instance.Tag, instance.Current, tags, ctx, createdBy)
@@ -184,7 +185,12 @@ func GetInstance(instanceId string) (*Instance, error) {
 		return nil, err
 	}
 
-	return workFlows.loadInstance(instanceId)
+	result, exists := workFlows.loadInstance(instanceId)
+	if !exists {
+		return nil, fmt.Errorf(MSG_INSTANCE_NOT_FOUND)
+	}
+
+	return result, nil
 }
 
 /**

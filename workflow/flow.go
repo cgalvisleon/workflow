@@ -154,7 +154,8 @@ func (s *Flow) Debug() *Flow {
 func (s *Flow) StepFn(name, description string, fn FnContext, stop bool) *Flow {
 	result, _ := newStepFn(name, description, fn, stop)
 	s.Steps = append(s.Steps, result)
-	s.setConfig(MSG_INSTANCE_STEP_CREATED, len(s.Steps)-1, name, s.Tag)
+	n := len(s.Steps)
+	s.setConfig(MSG_INSTANCE_STEP_CREATED, n, name, s.Tag)
 
 	return s
 }
@@ -167,7 +168,8 @@ func (s *Flow) StepFn(name, description string, fn FnContext, stop bool) *Flow {
 func (s *Flow) Step(name, description string, definition string, stop bool) *Flow {
 	result, _ := newStepDefinition(name, description, definition, stop)
 	s.Steps = append(s.Steps, result)
-	s.setConfig(MSG_INSTANCE_STEP_CREATED, len(s.Steps)-1, name, s.Tag)
+	n := len(s.Steps)
+	s.setConfig(MSG_INSTANCE_STEP_CREATED, n, name, s.Tag)
 
 	return s
 }

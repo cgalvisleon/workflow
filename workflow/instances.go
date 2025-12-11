@@ -22,43 +22,6 @@ const (
 	FlowStatusFailed  FlowStatus = "failed"
 )
 
-type LoadInstanceFn func(id string) (*Instance, error)
-type SaveInstanceFn func(instance *Instance) error
-type DeleteInstanceFn func(id string) error
-
-var (
-	loadInstance LoadInstanceFn
-	saveInstance SaveInstanceFn
-	delInstance  DeleteInstanceFn
-)
-
-/**
-* OnLoadInstance
-* @param f LoadInstanceFn
-* @return void
-**/
-func OnLoadInstance(f LoadInstanceFn) {
-	loadInstance = f
-}
-
-/**
-* OnSaveInstance
-* @param f SaveInstanceFn
-* @return void
-**/
-func OnSaveInstance(f SaveInstanceFn) {
-	saveInstance = f
-}
-
-/**
-* OnDeleteInstance
-* @param f DeleteInstanceFn
-* @return void
-**/
-func OnDeleteInstance(f DeleteInstanceFn) {
-	delInstance = f
-}
-
 type Instance struct {
 	*Flow
 	workFlows  *WorkFlows           `json:"-"`
@@ -89,7 +52,7 @@ type Instance struct {
 * Serialize
 * @return ([]byte, error)
 **/
-func (s *Instance) serialize() ([]byte, error) {
+func (s *Instance) Serialize() ([]byte, error) {
 	bt, err := json.Marshal(s)
 	if err != nil {
 		return nil, err
@@ -103,7 +66,7 @@ func (s *Instance) serialize() ([]byte, error) {
 * @return et.Json
 **/
 func (s *Instance) ToJson() et.Json {
-	bt, err := s.serialize()
+	bt, err := s.Serialize()
 	if err != nil {
 		return et.Json{}
 	}
@@ -126,10 +89,10 @@ func (s *Instance) ToJson() et.Json {
 * @return error
 **/
 func (s *Instance) Save() error {
-	if saveInstance != nil {
-		err := saveInstance(s)
+	if setFn != nil {
+		err := setFn(s)
 		if err != nil {
-			err = fmt.Errorf("saveInstance: error on save instanceId: %s, error: %v", s.Id, err)
+			err = fmt.Errorf("setFn: error on save instanceId: %s, error: %v", s.Id, err)
 			event.Publish(EVENT_ERROR, et.Json{
 				"message": err.Error(),
 			})

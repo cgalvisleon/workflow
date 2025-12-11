@@ -136,21 +136,34 @@ func (s *WorkFlows) newInstance(tag, id string, tags et.Json, startId int, creat
 * @param id string
 * @return *Flow, error
 **/
-func (s *WorkFlows) loadInstance(id string) (*Instance, error) {
+func (s *WorkFlows) loadInstance(id string) (*Instance, bool) {
 	if id == "" {
-		return nil, fmt.Errorf(MSG_INSTANCE_ID_REQUIRED)
+		return nil, false
 	}
 
-	if loadInstance != nil {
-		return loadInstance(id)
+	var result *Instance
+	if getFn != nil {
+		var err error
+		result, err = getFn(id)
+		if err != nil {
+			return nil, false
+		}
+	} else {
+		var ok bool
+		result, ok = s.Instances[id]
+		if !ok {
+			return nil, false
+		}
 	}
 
-	result, ok := s.Instances[id]
-	if !ok {
-		return nil, errorInstanceNotFound
+	flow := s.Flows[result.Tag]
+	if flow == nil {
+		return nil, false
 	}
 
-	return result, nil
+	result.Flow = flow
+
+	return result, true
 }
 
 /**
@@ -160,8 +173,8 @@ func (s *WorkFlows) loadInstance(id string) (*Instance, error) {
 **/
 func (s *WorkFlows) getOrCreateInstance(id, tag string, startId int, tags et.Json, createdBy string) (*Instance, error) {
 	id = reg.GetUUID(id)
-	result, err := s.loadInstance(id)
-	if err != nil {
+	result, exists := s.loadInstance(id)
+	if !exists {
 		return s.newInstance(tag, id, tags, startId, createdBy)
 	}
 
@@ -205,9 +218,9 @@ func (s *WorkFlows) run(instanceId, tag string, step int, tags, ctx et.Json, run
 * @return error
 **/
 func (s *WorkFlows) reset(instanceId, updatedBy string) error {
-	instance, err := s.loadInstance(instanceId)
-	if err != nil {
-		return err
+	instance, exists := s.loadInstance(instanceId)
+	if !exists {
+		return fmt.Errorf(MSG_INSTANCE_NOT_FOUND)
 	}
 
 	instance.UpdatedBy = updatedBy
@@ -222,9 +235,9 @@ func (s *WorkFlows) reset(instanceId, updatedBy string) error {
 * @return et.Json, error
 **/
 func (s *WorkFlows) rollback(instanceId string) (et.Json, error) {
-	instance, err := s.loadInstance(instanceId)
-	if err != nil {
-		return et.Json{}, err
+	instance, exists := s.loadInstance(instanceId)
+	if !exists {
+		return et.Json{}, fmt.Errorf(MSG_INSTANCE_NOT_FOUND)
 	}
 
 	result, err := instance.rollback(et.Json{}, nil)
@@ -241,9 +254,9 @@ func (s *WorkFlows) rollback(instanceId string) (et.Json, error) {
 * @return error
 **/
 func (s *WorkFlows) stop(instanceId string) error {
-	instance, err := s.loadInstance(instanceId)
-	if err != nil {
-		return err
+	instance, exists := s.loadInstance(instanceId)
+	if !exists {
+		return fmt.Errorf(MSG_INSTANCE_NOT_FOUND)
 	}
 
 	return instance.Stop()
@@ -255,13 +268,13 @@ func (s *WorkFlows) stop(instanceId string) error {
 * @return error
 **/
 func (s *WorkFlows) delete(instanceId string) error {
-	instance, err := s.loadInstance(instanceId)
-	if err != nil {
-		return err
+	instance, exists := s.loadInstance(instanceId)
+	if !exists {
+		return fmt.Errorf(MSG_INSTANCE_NOT_FOUND)
 	}
 
-	if delInstance != nil {
-		delInstance(instanceId)
+	if deleteFn != nil {
+		deleteFn(instanceId)
 	}
 
 	s.Remove(instanceId)

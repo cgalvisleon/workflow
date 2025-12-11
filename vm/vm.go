@@ -20,6 +20,8 @@ func New() *Vm {
 		Ctx:     et.Json{},
 	}
 
+	ToJson(result)
+	ToString(result)
 	Console(result)
 	Fetch(result)
 	Event(result)

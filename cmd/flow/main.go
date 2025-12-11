@@ -25,8 +25,9 @@ func flowDefinition() {
 		StepByFile("Step 1", "Step 1", "./step1.js", true)
 
 	result, err := workflow.Run("1234", "report:set", 0, et.Json{}, et.Json{
-		"test": "test",
-	}, "test")
+		"id":   "1234",
+		"name": "report",
+	}, "createdBy")
 	if err != nil {
 		logs.Error(err)
 	} else {

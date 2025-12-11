@@ -114,6 +114,10 @@ func newStepDefinition(name, description string, definition string, stop bool) (
 * @return et.Json, error
 **/
 func (s *Step) run(flow *Instance, ctx et.Json) (et.Json, error) {
+	if s.fn == nil {
+		return ctx, fmt.Errorf("step function is nil for step: %s at index %d", s.Name, flow.Current)
+	}
+
 	flow.SetStatus(FlowStatusRunning)
 	result, err := s.fn(flow, ctx)
 	if err != nil {

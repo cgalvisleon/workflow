@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/cgalvisleon/et/cache"
+	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/request"
@@ -172,6 +173,52 @@ func Cache(vm *Vm) {
 }
 
 /**
+* ToJson
+* @param vm *Vm
+**/
+func ToJson(vm *Vm) {
+	vm.Set("toJson", func(call goja.FunctionCall) goja.Value {
+		args := call.Arguments
+		if len(args) != 1 {
+			panic(vm.NewGoError(fmt.Errorf(MSG_ARG_REQUIRED, "value")))
+		}
+		value := args[0].Export()
+
+		switch v := value.(type) {
+		case map[string]interface{}:
+			return vm.ToValue(et.Json(v).ToString())
+		case et.Json:
+			return vm.ToValue(v.ToString())
+		default:
+			return vm.ToValue(et.Json{})
+		}
+	})
+}
+
+/**
+* ToString
+* @param vm *Vm
+**/
+func ToString(vm *Vm) {
+	vm.Set("toString", func(call goja.FunctionCall) goja.Value {
+		args := call.Arguments
+		if len(args) != 1 {
+			panic(vm.NewGoError(fmt.Errorf(MSG_ARG_REQUIRED, "value")))
+		}
+		value := args[0].Export()
+
+		switch v := value.(type) {
+		case map[string]interface{}:
+			return vm.ToValue(et.Json(v).ToString())
+		case et.Json:
+			return vm.ToValue(v.ToString())
+		default:
+			return vm.ToValue(et.Json{})
+		}
+	})
+}
+
+/**
 * Model
 * @param vm *Vm
 **/
@@ -233,6 +280,7 @@ func Query(vm *Vm) {
 		for i := 2; i < len(args); i++ {
 			arg = append(arg, args[i].Export())
 		}
+
 		result, err := jdb.Query(database, sql, arg...)
 		if err != nil {
 			panic(vm.NewGoError(err))
