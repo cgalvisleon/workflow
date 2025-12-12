@@ -67,6 +67,10 @@ func newStepDefinition(name, description string, definition string, stop bool) (
 		flow.vm.Set("ctx", flow.Ctx)
 		flow.vm.Set("ctxs", flow.Ctxs)
 		flow.vm.Set("pinnedData", flow.PinnedData)
+		for k, v := range flow.objects {
+			flow.vm.Set(k, v)
+		}
+
 		if definition == "" {
 			return et.Json{}, fmt.Errorf(MSG_INSTANCE_DEFINITION_EMPTY)
 		}

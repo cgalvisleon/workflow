@@ -218,6 +218,7 @@ func (s *Instance) SetTags(tags et.Json) {
 * @return et.Json, error
 **/
 func (s *Instance) setDone(result et.Json, err error) (et.Json, error) {
+	s.SetCtx(result)
 	s.SetResult(result, err)
 	s.SetStatus(FlowStatusDone)
 
@@ -241,6 +242,7 @@ func (s *Instance) setFailed(result et.Json, err error) (et.Json, error) {
 * @return et.Json, error
 **/
 func (s *Instance) setStop(result et.Json, err error) (et.Json, error) {
+	s.SetCtx(result)
 	s.SetResult(result, err)
 	s.SetStep(s.Current + 1)
 	s.SetStatus(FlowStatusPending)
@@ -266,6 +268,7 @@ func (s *Instance) setNext(result et.Json, err error) (et.Json, error) {
 * @return et.Json, error
 **/
 func (s *Instance) setGoto(step int, message string, result et.Json, err error) (et.Json, error) {
+	s.SetCtx(result)
 	s.SetResult(result, err)
 	s.SetStep(step)
 	s.goTo = -1
@@ -296,8 +299,8 @@ func (s *Instance) run(ctx et.Json, runerBy string) (et.Json, error) {
 	s.UpdatedBy = runerBy
 	var err error
 	for s.Current < len(s.Steps) {
-		ctx = s.SetCtx(ctx)
 		step := s.Steps[s.Current]
+		ctx = s.SetCtx(ctx)
 		ctx, err = step.run(s, ctx)
 		if err != nil {
 			return s.rollback(ctx, err)

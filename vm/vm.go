@@ -34,12 +34,18 @@ func New() *Vm {
 
 /**
 * Run
-* Run a script
+* @param script string
+* @return goja.Value, error
 **/
 func (v *Vm) Run(script string) (goja.Value, error) {
 	if script == "" {
 		return nil, nil
 	}
 
-	return v.RunString(script)
+	result, err := v.RunString(script)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

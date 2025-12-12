@@ -9,6 +9,7 @@ import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/logs"
+	"github.com/cgalvisleon/jdb/jdb"
 )
 
 type TpConsistency string
@@ -62,19 +63,20 @@ func OnDeleteFlow(f DeleteFlowFn) {
 }
 
 type Flow struct {
-	Tag           string        `json:"tag"`
-	Version       string        `json:"version"`
-	Name          string        `json:"name"`
-	Description   string        `json:"description"`
-	TotalAttempts int           `json:"total_attempts"`
-	TimeAttempts  time.Duration `json:"time_attempts"`
-	RetentionTime time.Duration `json:"retention_time"`
-	Steps         []*Step       `json:"steps"`
-	TpConsistency TpConsistency `json:"tp_consistency"`
-	Team          string        `json:"team"`
-	Level         string        `json:"level"`
-	CreatedBy     string        `json:"created_by"`
-	isDebug       bool          `json:"-"`
+	Tag           string                 `json:"tag"`
+	Version       string                 `json:"version"`
+	Name          string                 `json:"name"`
+	Description   string                 `json:"description"`
+	TotalAttempts int                    `json:"total_attempts"`
+	TimeAttempts  time.Duration          `json:"time_attempts"`
+	RetentionTime time.Duration          `json:"retention_time"`
+	Steps         []*Step                `json:"steps"`
+	TpConsistency TpConsistency          `json:"tp_consistency"`
+	Team          string                 `json:"team"`
+	Level         string                 `json:"level"`
+	CreatedBy     string                 `json:"created_by"`
+	objects       map[string]interface{} `json:"-"`
+	isDebug       bool                   `json:"-"`
 }
 
 /**
@@ -144,6 +146,27 @@ func (s *Flow) setConfig(format string, args ...any) {
 func (s *Flow) Debug() *Flow {
 	s.isDebug = true
 	return s
+}
+
+/**
+* Set
+* @param key string, value any
+**/
+func (s *Flow) Set(key string, value any) {
+	s.objects[key] = value
+}
+
+/**
+* SetModel
+* @param database, name string
+**/
+func (s *Flow) SetModel(database, name string) {
+	model, err := jdb.GetModel(database, name)
+	if err != nil {
+		return
+	}
+
+	s.Set(model.Name, model)
 }
 
 /**

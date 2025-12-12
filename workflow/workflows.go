@@ -125,8 +125,8 @@ func (s *WorkFlows) newInstance(tag, id string, tags et.Json, startId int, creat
 		goTo:       -1,
 		vm:         vm.New(),
 	}
-	result.SetStatus(FlowStatusPending)
 	s.Add(result)
+	result.SetStatus(FlowStatusPending)
 
 	return result, nil
 }
@@ -141,29 +141,31 @@ func (s *WorkFlows) loadInstance(id string) (*Instance, bool) {
 		return nil, false
 	}
 
-	var result *Instance
+	result, ok := s.Instances[id]
+	if ok {
+		return result, true
+	}
+
 	if getFn != nil {
-		var err error
-		result, err = getFn(id)
+		result, err := getFn(id)
 		if err != nil {
 			return nil, false
 		}
-	} else {
-		var ok bool
-		result, ok = s.Instances[id]
-		if !ok {
+
+		flow := s.Flows[result.Tag]
+		if flow == nil {
 			return nil, false
 		}
+
+		result.Flow = flow
+		result.goTo = -1
+		result.vm = vm.New()
+		s.Add(result)
+
+		return result, true
 	}
 
-	flow := s.Flows[result.Tag]
-	if flow == nil {
-		return nil, false
-	}
-
-	result.Flow = flow
-
-	return result, true
+	return nil, false
 }
 
 /**
@@ -194,10 +196,8 @@ func (s *WorkFlows) run(instanceId, tag string, step int, tags, ctx et.Json, run
 	}
 
 	instance.SetTags(tags)
-	if step != -1 {
+	if step > 0 {
 		instance.Current = step
-		currentCtx := instance.Ctxs[step]
-		instance.SetCtx(currentCtx)
 	}
 	result, err := instance.run(ctx, runBy)
 	if err != nil {
