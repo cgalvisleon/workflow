@@ -25,32 +25,32 @@ func init() {
 	workerHost, _ = os.Hostname()
 }
 
-type LoadFlowFn func(tag string) (*Flow, error)
-type SaveFlowFn func(flow *Flow) error
+type GetFlowFn func(tag string) (*Flow, error)
+type SetFlowFn func(flow *Flow) error
 type DeleteFlowFn func(tag string) error
 
 var (
-	loadFlow LoadFlowFn
-	saveFlow SaveFlowFn
-	delFlow  DeleteFlowFn
+	getFlow    GetFlowFn
+	setFlow    SetFlowFn
+	deleteFlow DeleteFlowFn
 )
 
 /**
-* OnLoadFlow
-* @param f LoadFlowFn
+* OnGetFlow
+* @param f GetFlowFn
 * @return void
 **/
-func OnLoadFlow(f LoadFlowFn) {
-	loadFlow = f
+func OnGetFlow(f GetFlowFn) {
+	getFlow = f
 }
 
 /**
-* OnSaveFlow
-* @param f SaveFlowFn
+* OnSetFlow
+* @param f SetFlowFn
 * @return void
 **/
-func OnSaveFlow(f SaveFlowFn) {
-	saveFlow = f
+func OnSetFlow(f SetFlowFn) {
+	setFlow = f
 }
 
 /**
@@ -59,31 +59,37 @@ func OnSaveFlow(f SaveFlowFn) {
 * @return void
 **/
 func OnDeleteFlow(f DeleteFlowFn) {
-	delFlow = f
+	deleteFlow = f
+}
+
+type Model struct {
+	Database string `json:"database"`
+	Name     string `json:"name"`
 }
 
 type Flow struct {
-	Tag           string                 `json:"tag"`
-	Version       string                 `json:"version"`
-	Name          string                 `json:"name"`
-	Description   string                 `json:"description"`
-	TotalAttempts int                    `json:"total_attempts"`
-	TimeAttempts  time.Duration          `json:"time_attempts"`
-	RetentionTime time.Duration          `json:"retention_time"`
-	Steps         []*Step                `json:"steps"`
-	TpConsistency TpConsistency          `json:"tp_consistency"`
-	Team          string                 `json:"team"`
-	Level         string                 `json:"level"`
-	CreatedBy     string                 `json:"created_by"`
-	objects       map[string]interface{} `json:"-"`
-	isDebug       bool                   `json:"-"`
+	Tag           string                `json:"tag"`
+	Version       string                `json:"version"`
+	Name          string                `json:"name"`
+	Description   string                `json:"description"`
+	TotalAttempts int                   `json:"total_attempts"`
+	TimeAttempts  time.Duration         `json:"time_attempts"`
+	RetentionTime time.Duration         `json:"retention_time"`
+	Steps         []*Step               `json:"steps"`
+	TpConsistency TpConsistency         `json:"tp_consistency"`
+	Team          string                `json:"team"`
+	Level         string                `json:"level"`
+	CreatedBy     string                `json:"created_by"`
+	Models        []*Model              `json:"models"`
+	models        map[string]*jdb.Model `json:"-"`
+	isDebug       bool                  `json:"-"`
 }
 
 /**
 * Serialize
 * @return ([]byte, error)
 **/
-func (s *Flow) serialize() ([]byte, error) {
+func (s *Flow) Serialize() ([]byte, error) {
 	bt, err := json.Marshal(s)
 	if err != nil {
 		return nil, err
@@ -97,7 +103,7 @@ func (s *Flow) serialize() ([]byte, error) {
 * @return et.Json
 **/
 func (s *Flow) ToJson() et.Json {
-	bt, err := s.serialize()
+	bt, err := s.Serialize()
 	if err != nil {
 		return et.Json{}
 	}
@@ -116,10 +122,10 @@ func (s *Flow) ToJson() et.Json {
 * @return error
 **/
 func (s *Flow) Save() error {
-	if saveFlow != nil {
-		err := saveFlow(s)
+	if setFlow != nil {
+		err := setFlow(s)
 		if err != nil {
-			err = fmt.Errorf("saveFlow: error on save flow: %s, error: %v", s.Tag, err)
+			err = fmt.Errorf("setFlow: error on save flow: %s, error: %v", s.Tag, err)
 			event.Publish(EVENT_ERROR, et.Json{
 				"message": err.Error(),
 			})
@@ -149,24 +155,39 @@ func (s *Flow) Debug() *Flow {
 }
 
 /**
-* Set
-* @param key string, value any
+* loadModel
+* @param database, name string
 **/
-func (s *Flow) Set(key string, value any) {
-	s.objects[key] = value
+func (s *Flow) loadModel(database, name string) error {
+	model, err := jdb.GetModel(database, name)
+	if err != nil {
+		return err
+	}
+
+	s.models[name] = model
+	return nil
 }
 
 /**
-* SetModel
+* LoadModel
 * @param database, name string
 **/
-func (s *Flow) SetModel(database, name string) {
-	model, err := jdb.GetModel(database, name)
-	if err != nil {
-		return
+func (s *Flow) LoadModel(database, name string) error {
+	if _, ok := s.models[name]; ok {
+		return nil
 	}
 
-	s.Set(model.Name, model)
+	err := s.loadModel(database, name)
+	if err != nil {
+		return err
+	}
+
+	result := &Model{
+		Database: database,
+		Name:     name,
+	}
+	s.Models = append(s.Models, result)
+	return nil
 }
 
 /**

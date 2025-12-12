@@ -2,12 +2,16 @@ package workflow
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/cgalvisleon/et/cache"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/logs"
+	"github.com/cgalvisleon/et/msg"
+	"github.com/cgalvisleon/et/response"
+	"github.com/cgalvisleon/et/utility"
 )
 
 var workFlows *WorkFlows
@@ -90,6 +94,83 @@ func NewFn(tag, version, name, description string, fn FnContext, stop bool, crea
 	}
 
 	return workFlows.newFlowFn(tag, version, name, description, fn, stop, createdBy)
+}
+
+/**
+* LoadFlow
+* @param params et.Json
+* @return (*Flow, error)
+**/
+func LoadFlow(params et.Json) (*Flow, error) {
+	if err := Load(); err != nil {
+		return nil, err
+	}
+
+	tag := params.Str("tag")
+	name := params.Str("name")
+	version := params.Str("version")
+	if !utility.ValidStr(tag, 0, []string{""}) {
+		return nil, fmt.Errorf(msg.MSG_ATRIB_REQUIRED, "tag")
+	}
+	if !utility.ValidStr(name, 0, []string{""}) {
+		return nil, fmt.Errorf(msg.MSG_ATRIB_REQUIRED, "name")
+	}
+	if !utility.ValidStr(version, 0, []string{""}) {
+		return nil, fmt.Errorf(msg.MSG_ATRIB_REQUIRED, "version")
+	}
+
+	description := params.Str("description")
+	definition := params.Str("definition")
+	stop := params.Bool("stop")
+	createdBy := params.Str("createdBy")
+	steps := params.ArrayJson("eteps")
+	result := workFlows.newFlowDefinition(tag, version, name, description, definition, stop, createdBy)
+	for i, step := range steps {
+		name := step.Str("name")
+		description := step.Str("description")
+		if !utility.ValidStr(name, 0, []string{""}) {
+			return nil, fmt.Errorf(MSG_ATTRIBUTE_REQUIRED_STEP, "name", i)
+		}
+		if !utility.ValidStr(description, 0, []string{""}) {
+			return nil, fmt.Errorf(MSG_ATTRIBUTE_REQUIRED_STEP, "description", i)
+		}
+
+		definition := step.Str("definition")
+		stop := step.Bool("stop")
+		result.Step(name, description, definition, stop)
+	}
+
+	models := params.ArrayJson("models")
+	for _, model := range models {
+		dataBase := model.Str("database")
+		name := model.Str("name")
+		result.loadModel(dataBase, name)
+	}
+
+	return result, nil
+}
+
+/**
+* LoadByTag
+* @param tag string
+* @return (*Flow, error)
+**/
+func LoadByTag(tag string) (*Flow, error) {
+	if err := Load(); err != nil {
+		return nil, err
+	}
+
+	if getFlow == nil {
+		return nil, fmt.Errorf(MSG_FLOW_NOT_FOUND)
+	}
+
+	result, err := getFlow(tag)
+	if err != nil {
+		return nil, err
+	}
+
+	workFlows.add(result)
+	return result, nil
 }
 
 /**
@@ -204,4 +285,19 @@ func DeleteInstance(instanceId string) error {
 	}
 
 	return workFlows.delete(instanceId)
+}
+
+/**
+* HttpAll
+* @params w http.ResponseWriter, r *http.Request
+**/
+func HttpAll(w http.ResponseWriter, r *http.Request) {
+	body, _ := response.GetBody(r)
+	result, err := LoadFlow(body)
+	if err != nil {
+		response.HTTPError(w, r, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.JSON(w, r, http.StatusOK, result)
 }

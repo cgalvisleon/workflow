@@ -67,7 +67,7 @@ func newStepDefinition(name, description string, definition string, stop bool) (
 		flow.vm.Set("ctx", flow.Ctx)
 		flow.vm.Set("ctxs", flow.Ctxs)
 		flow.vm.Set("pinnedData", flow.PinnedData)
-		for k, v := range flow.objects {
+		for k, v := range flow.models {
 			flow.vm.Set(k, v)
 		}
 

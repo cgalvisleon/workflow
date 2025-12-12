@@ -284,13 +284,21 @@ func (s *WorkFlows) delete(instanceId string) error {
 }
 
 /**
+* add
+* @param flow *Flow
+**/
+func (s *WorkFlows) add(flow *Flow) {
+	s.Flows[flow.Tag] = flow
+}
+
+/**
 * newFlowFn
 * @param tag, version, name, description string, fn FnContext, stop bool, createdBy string
 * @return *Flow
 **/
 func (s *WorkFlows) newFlowFn(tag, version, name, description string, fn FnContext, stop bool, createdBy string) *Flow {
 	flow := newFlowFn(tag, version, name, description, fn, stop, createdBy)
-	s.Flows[tag] = flow
+	s.add(flow)
 
 	return flow
 }
@@ -302,7 +310,7 @@ func (s *WorkFlows) newFlowFn(tag, version, name, description string, fn FnConte
 **/
 func (s *WorkFlows) newFlowDefinition(tag, version, name, description string, definition string, stop bool, createdBy string) *Flow {
 	flow := newFlowDefinition(tag, version, name, description, definition, stop, createdBy)
-	s.Flows[tag] = flow
+	s.add(flow)
 
 	return flow
 }
@@ -313,8 +321,8 @@ func (s *WorkFlows) newFlowDefinition(tag, version, name, description string, de
 * @return error
 **/
 func (s *WorkFlows) deleteFlow(tag string) error {
-	if delFlow != nil {
-		delFlow(tag)
+	if deleteFlow != nil {
+		deleteFlow(tag)
 	}
 
 	if s.Flows[tag] == nil {
