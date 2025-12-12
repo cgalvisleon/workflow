@@ -288,10 +288,10 @@ func DeleteInstance(instanceId string) error {
 }
 
 /**
-* HttpAll
+* HttpLoad
 * @params w http.ResponseWriter, r *http.Request
 **/
-func HttpAll(w http.ResponseWriter, r *http.Request) {
+func HttpLoad(w http.ResponseWriter, r *http.Request) {
 	body, _ := response.GetBody(r)
 	result, err := LoadFlow(body)
 	if err != nil {
