@@ -332,10 +332,31 @@ func HttpLoadByTag(w http.ResponseWriter, r *http.Request) {
 }
 
 /**
-* HttpLoad
+* HttpLoadByDefinition
 * @params w http.ResponseWriter, r *http.Request
 **/
-func HttpLoad(w http.ResponseWriter, r *http.Request) {
+func HttpLoadByDefinition(w http.ResponseWriter, r *http.Request) {
+	body, _ := response.GetBody(r)
+	definition, err := body.Byte("definition")
+	if err != nil {
+		response.HTTPError(w, r, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	result, err := FlowByDefinition(definition)
+	if err != nil {
+		response.HTTPError(w, r, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.JSON(w, r, http.StatusOK, result.ToJson())
+}
+
+/**
+* HttpLoadByParams
+* @params w http.ResponseWriter, r *http.Request
+**/
+func HttpLoadByParams(w http.ResponseWriter, r *http.Request) {
 	body, _ := response.GetBody(r)
 	result, err := FlowByParams(body)
 	if err != nil {
