@@ -1,6 +1,7 @@
 package workflow
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"github.com/cgalvisleon/et/msg"
 	"github.com/cgalvisleon/et/response"
 	"github.com/cgalvisleon/et/utility"
+	"github.com/go-chi/chi/v5"
 )
 
 var workFlows *WorkFlows
@@ -211,11 +213,11 @@ func DeleteInstance(instanceId string) error {
 }
 
 /**
-* LoadByTag
+* FlowByTag
 * @param tag string
 * @return (*Flow, error)
 **/
-func LoadByTag(tag string) (*Flow, error) {
+func FlowByTag(tag string) (*Flow, error) {
 	if err := Load(); err != nil {
 		return nil, err
 	}
@@ -234,11 +236,31 @@ func LoadByTag(tag string) (*Flow, error) {
 }
 
 /**
-* LoadFlow
+* FlowByDefinition
+* @param bt []byte
+* @return (*Flow, error)
+**/
+func FlowByDefinition(bt []byte) (*Flow, error) {
+	if err := Load(); err != nil {
+		return nil, err
+	}
+
+	var result *Flow
+	err := json.Unmarshal(bt, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	workFlows.add(result)
+	return result, nil
+}
+
+/**
+* FlowByParams
 * @param params et.Json
 * @return (*Flow, error)
 **/
-func LoadFlow(params et.Json) (*Flow, error) {
+func FlowByParams(params et.Json) (*Flow, error) {
 	if err := Load(); err != nil {
 		return nil, err
 	}
@@ -288,10 +310,25 @@ func LoadFlow(params et.Json) (*Flow, error) {
 			return nil, fmt.Errorf(msg.MSG_ATRIB_REQUIRED, "name")
 		}
 
-		result.loadModel(dataBase, name)
+		result.AddModel(dataBase, name)
 	}
 
 	return result, nil
+}
+
+/**
+* HttpLoadByTag
+* @params w http.ResponseWriter, r *http.Request
+**/
+func HttpLoadByTag(w http.ResponseWriter, r *http.Request) {
+	tag := chi.URLParam(r, "tag")
+	result, err := FlowByTag(tag)
+	if err != nil {
+		response.HTTPError(w, r, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.JSON(w, r, http.StatusOK, result.ToJson())
 }
 
 /**
@@ -300,11 +337,11 @@ func LoadFlow(params et.Json) (*Flow, error) {
 **/
 func HttpLoad(w http.ResponseWriter, r *http.Request) {
 	body, _ := response.GetBody(r)
-	result, err := LoadFlow(body)
+	result, err := FlowByParams(body)
 	if err != nil {
 		response.HTTPError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	response.JSON(w, r, http.StatusOK, result)
+	response.JSON(w, r, http.StatusOK, result.ToJson())
 }

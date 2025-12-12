@@ -155,42 +155,6 @@ func (s *Flow) Debug() *Flow {
 }
 
 /**
-* loadModel
-* @param database, name string
-**/
-func (s *Flow) loadModel(database, name string) error {
-	model, err := jdb.GetModel(database, name)
-	if err != nil {
-		return err
-	}
-
-	s.models[name] = model
-	return nil
-}
-
-/**
-* LoadModel
-* @param database, name string
-**/
-func (s *Flow) LoadModel(database, name string) error {
-	if _, ok := s.models[name]; ok {
-		return nil
-	}
-
-	err := s.loadModel(database, name)
-	if err != nil {
-		return err
-	}
-
-	result := &Model{
-		Database: database,
-		Name:     name,
-	}
-	s.Models = append(s.Models, result)
-	return nil
-}
-
-/**
 * StepFn
 * @param name, description string, fn FnContext, retries, retryDelay int, stop bool
 * @return *Fn
@@ -235,6 +199,22 @@ func (s *Flow) StepByFile(name, description string, filePath string, stop bool) 
 	}
 
 	return s.Step(name, description, string(definition), stop)
+}
+
+/**
+* AddModel
+* @param database, name string
+* @return *Flow
+**/
+func (s *Flow) AddModel(database, name string) *Flow {
+	model, err := jdb.GetModel(database, name)
+	if err != nil {
+		logs.Error(err)
+		return s
+	}
+
+	s.models[name] = model
+	return s
 }
 
 /**

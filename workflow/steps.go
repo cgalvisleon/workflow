@@ -86,15 +86,15 @@ func newStepDefinition(name, description string, definition string, stop bool) (
 
 		result := flow.vm.Get("result")
 		if result == goja.Undefined() {
-			return et.Json{}, nil
+			return flow.Ctx, nil
 		}
 
 		if result == goja.Null() {
-			return et.Json{}, nil
+			return flow.Ctx, nil
 		}
 
 		if result == nil {
-			return et.Json{}, nil
+			return flow.Ctx, nil
 		}
 
 		switch v := result.Export().(type) {

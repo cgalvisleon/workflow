@@ -20,7 +20,8 @@ func main() {
 
 func flowDefinition() {
 	workflow.NewByFile("report:set", "1.0.0", "Registro de reportes", "", "./step0.js", false, "test").
-		StepByFile("Step 1", "Step 1", "./step1.js", true)
+		StepByFile("Step 1", "Step 1", "./step1.js", true).
+		AddModel("postgres", "report")
 
 	result, err := workflow.Run("1234", "report:set", 0, et.Json{}, et.Json{
 		"id":   "1234",
